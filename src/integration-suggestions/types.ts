@@ -1,8 +1,13 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { BAAI_OPEN_FILE_COMMAND_ID } from '../identifier';
 
 export class MigrationSuggestion {
-  constructor(public readonly lineNumber: number, public readonly suggestion: string) {}
+  constructor(
+    public readonly file: File,
+    public readonly lineNumber: number,
+    public readonly suggestion: string
+  ) {}
 }
 
 export class Folder {
@@ -38,6 +43,11 @@ export class FileItem extends vscode.TreeItem {
     const label = path.basename(file.filePath);
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
     this.description = this.file.suggestions.length.toString();
+    this.command = {
+      command: BAAI_OPEN_FILE_COMMAND_ID,
+      title: '',
+      arguments: [file.filePath, 0],
+    };
   }
 
   iconPath = {
@@ -50,6 +60,11 @@ export class MigrationSuggestionItem extends vscode.TreeItem {
   constructor(public readonly suggestion: MigrationSuggestion) {
     super(suggestion.suggestion, vscode.TreeItemCollapsibleState.None);
     this.description = `Line ${suggestion.lineNumber}`;
+    this.command = {
+      command: BAAI_OPEN_FILE_COMMAND_ID,
+      title: '',
+      arguments: [suggestion.file.filePath, suggestion.lineNumber - 1],
+    };
   }
 
   iconPath = {

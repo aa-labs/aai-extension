@@ -2,9 +2,7 @@ import * as vscode from 'vscode';
 import { SuggestionsService } from './integration-suggestions/suggestion-service';
 import { IntegrationSuggestionsTreeProvider } from './integration-suggestions/integration-suggestions-tree-provider';
 import { Folder } from './integration-suggestions/types';
-
-const BAAI_VIEW_CONTAINER_ID = 'baai-view-container';
-const BAAI_INTEGRATION_SUGGESTIONS_VIEW_ID = 'baai-integration-view';
+import { BAAI_INTEGRATION_SUGGESTIONS_VIEW_ID, BAAI_REFRESH_COMMAND_ID } from './identifier';
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "baai" is now active!');
@@ -30,7 +28,19 @@ export function activate(context: vscode.ExtensionContext) {
 
   vscode.window.registerTreeDataProvider(BAAI_INTEGRATION_SUGGESTIONS_VIEW_ID, provider);
   context.subscriptions.push(
-    vscode.commands.registerCommand('baai.refresh', () => generateSuggestions())
+    vscode.commands.registerCommand(BAAI_REFRESH_COMMAND_ID, () => generateSuggestions())
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('baai.openFile', (filePath: string, lineNumber: number) => {
+      const uri = vscode.Uri.file(filePath);
+      const options: vscode.TextDocumentShowOptions = {
+        selection: new vscode.Range(lineNumber, 0, lineNumber, 0),
+      };
+
+      vscode.workspace.openTextDocument(uri).then((doc) => {
+        vscode.window.showTextDocument(doc, options);
+      });
+    })
   );
 
   generateSuggestions();

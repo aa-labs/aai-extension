@@ -57,7 +57,7 @@ export class SuggestionsService {
     // Generate suggestions for the files
     for (const file of folder.files) {
       this.filePathToFileMap.set(file.filePath, file);
-      file.suggestions = await this.getSuggestionsForFile(file.filePath);
+      file.suggestions = await this.getSuggestionsForFile(file);
       folder.totalSuggestions += file.suggestions.length;
     }
 
@@ -69,12 +69,15 @@ export class SuggestionsService {
     return folder.totalSuggestions;
   }
 
-  async getSuggestionsForFile(filePath: string): Promise<MigrationSuggestion[]> {
-    console.log(`Generating suggestions for ${filePath}`);
+  async getSuggestionsForFile(file: File): Promise<MigrationSuggestion[]> {
+    console.log(`Generating suggestions for ${file.filePath}`);
 
     return await new Promise((resolve) => {
       setTimeout(() => {
-        resolve([new MigrationSuggestion(1, 'hello'), new MigrationSuggestion(2, 'world')]);
+        resolve([
+          new MigrationSuggestion(file, 10, 'hello'),
+          new MigrationSuggestion(file, 20, 'world'),
+        ]);
       }, 500);
     });
   }
