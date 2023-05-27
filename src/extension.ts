@@ -18,14 +18,15 @@ export function activate(context: vscode.ExtensionContext) {
     throw new Error('No workspace root path');
   }
 
+  const rootFolder = new Folder(rootPath, null);
   const suggestionService = new SuggestionsService(rootPath);
+  const provider = new IntegrationSuggestionsTreeProvider(rootPath, suggestionService);
 
-  vscode.window.registerTreeDataProvider(
-    BAAI_INTEGRATION_SUGGESTIONS_VIEW_ID,
-    new IntegrationSuggestionsTreeProvider(rootPath, suggestionService)
-  );
+  vscode.window.registerTreeDataProvider(BAAI_INTEGRATION_SUGGESTIONS_VIEW_ID, provider);
 
-  suggestionService.buildFolderStructureAndGenerateSuggestions(new Folder(rootPath, null));
+  suggestionService.buildFolderStructureAndGenerateSuggestions(rootFolder).then(() => {
+    provider.refresh();
+  });
 }
 
 // This method is called when your extension is deactivated

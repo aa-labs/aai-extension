@@ -5,6 +5,11 @@ import type { Item } from './types';
 import { SuggestionsService } from './suggestion-service';
 
 export class IntegrationSuggestionsTreeProvider implements vscode.TreeDataProvider<Item> {
+  private _onDidChangeTreeData: vscode.EventEmitter<Item | undefined | null | void> =
+    new vscode.EventEmitter<Item | undefined | null | void>();
+  readonly onDidChangeTreeData: vscode.Event<Item | undefined | null | void> =
+    this._onDidChangeTreeData.event;
+
   constructor(
     private workspaceRoot: string,
     private readonly suggestionService: SuggestionsService
@@ -21,7 +26,8 @@ export class IntegrationSuggestionsTreeProvider implements vscode.TreeDataProvid
     }
 
     if (!element) {
-      return [];
+      const rootFolder = this.suggestionService.folderPathToFolderMap.get(this.workspaceRoot);
+      return rootFolder ? this.getChildrenForFolder(new FolderItem(rootFolder)) : [];
     }
 
     if (element instanceof FolderItem) {
@@ -35,18 +41,23 @@ export class IntegrationSuggestionsTreeProvider implements vscode.TreeDataProvid
     return [];
   }
 
-  getChilderForFile(fileItem: FileItem): Item[] {
+  refresh(): void {
+    console.log('calling refresh on integration suggestions tree provider');
+    this._onDidChangeTreeData.fire();
+  }
+
+  private getChilderForFile(fileItem: FileItem): Item[] {
     return fileItem.file.suggestions.map((suggestion) => new MigrationSuggestionItem(suggestion));
   }
 
-  getChildrenForFolder(folderItem: FolderItem): Item[] {
+  private getChildrenForFolder(folderItem: FolderItem): Item[] {
     const folder = folderItem.folder;
     const folders = folder.folders.map((folder) => new FolderItem(folder));
     const files = folder.files.map((file) => new FileItem(file));
     return [...folders, ...files];
   }
 
-  getChildrenForSuggestion(suggestionItem: MigrationSuggestionItem): Item[] {
+  private getChildrenForSuggestion(suggestionItem: MigrationSuggestionItem): Item[] {
     return [];
   }
 }
