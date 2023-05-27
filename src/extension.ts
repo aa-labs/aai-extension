@@ -22,11 +22,18 @@ export function activate(context: vscode.ExtensionContext) {
   const suggestionService = new SuggestionsService(rootPath);
   const provider = new IntegrationSuggestionsTreeProvider(rootPath, suggestionService);
 
-  vscode.window.registerTreeDataProvider(BAAI_INTEGRATION_SUGGESTIONS_VIEW_ID, provider);
+  const generateSuggestions = () => {
+    suggestionService.buildFolderStructureAndGenerateSuggestions(rootFolder).then(() => {
+      provider.refresh();
+    });
+  };
 
-  suggestionService.buildFolderStructureAndGenerateSuggestions(rootFolder).then(() => {
-    provider.refresh();
-  });
+  vscode.window.registerTreeDataProvider(BAAI_INTEGRATION_SUGGESTIONS_VIEW_ID, provider);
+  context.subscriptions.push(
+    vscode.commands.registerCommand('baai.refresh', () => generateSuggestions())
+  );
+
+  generateSuggestions();
 }
 
 // This method is called when your extension is deactivated
