@@ -47,7 +47,13 @@
           "name": "Integration Suggestions"
         }
       ]
-    }
+    },
+    "viewsWelcome": [
+      {
+        "view": "baai-integration-view",
+        "contents": "Scan your project for integration suggestions.\n[Scan Project](command:baai.refresh)"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "yarn run package",

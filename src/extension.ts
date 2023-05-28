@@ -44,7 +44,6 @@ export function activate(context: vscode.ExtensionContext) {
         console.error(`Error generating suggestions: ${e}`);
       });
   };
-  generateSuggestions();
 
   vscode.window.registerTreeDataProvider(BAAI_INTEGRATION_SUGGESTIONS_VIEW_ID, provider);
   context.subscriptions.push(
