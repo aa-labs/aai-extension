@@ -1,20 +1,21 @@
-import { readdir, lstat } from 'node:fs/promises';
-import ignore, { Ignore } from 'ignore';
-import type { Stats } from 'fs';
-import * as path from 'path';
-import * as fs from 'fs';
+import { readdir, lstat, readFile } from "node:fs/promises";
+import ignore, { Ignore } from "ignore";
+import type { Stats } from "fs";
+import * as path from "path";
+import * as fs from "fs";
+import axios from "axios";
 
-import { File, Folder, Suggestion, SuggestionType } from './types';
+import { File, Folder, Suggestion, SuggestionType } from "./types";
 
 export class SuggestionsService {
   private readonly staticFilters = [
-    '.git',
-    '.vscode',
-    'node_modules',
-    '*.json',
-    '*.lock',
-    '*.md',
-    '.gitignore',
+    ".git",
+    ".vscode",
+    "node_modules",
+    "*.json",
+    "*.lock",
+    "*.md",
+    ".gitignore",
   ];
   private readonly ig: Ignore;
   private readonly filter: (pathname: string) => boolean;
@@ -27,8 +28,8 @@ export class SuggestionsService {
   constructor(private readonly workspaceRoot: string) {
     try {
       const rules = fs
-        .readFileSync(path.join(this.workspaceRoot, '.gitignore'), 'utf-8')
-        .split('\n');
+        .readFileSync(path.join(this.workspaceRoot, ".gitignore"), "utf-8")
+        .split("\n");
       this.ig = ignore().add(rules).add(this.staticFilters);
     } catch (e) {
       console.error(`Error reading .gitignore: ${e}`);
@@ -46,7 +47,9 @@ export class SuggestionsService {
     this.folderPathToFolderMap.set(folder.folderPath, folder);
 
     const items = await readdir(folder.folderPath);
-    const paths = items.filter(this.filter).map((item) => path.join(folder.folderPath, item));
+    const paths = items
+      .filter(this.filter)
+      .map((item) => path.join(folder.folderPath, item));
     const stats: [string, Stats][] = await Promise.all(
       paths.map(async (item) => [item, await lstat(item)])
     );
@@ -69,74 +72,88 @@ export class SuggestionsService {
 
     // Create the folder objects and recurse
     for (const childFolder of folder.folders) {
-      const totalSuggestions = await this.buildFolderStructureAndGenerateSuggestions(childFolder);
+      const totalSuggestions =
+        await this.buildFolderStructureAndGenerateSuggestions(childFolder);
       folder.totalSuggestions[SuggestionType.migration] +=
         totalSuggestions[SuggestionType.migration];
-      folder.totalSuggestions[SuggestionType.batching] += totalSuggestions[SuggestionType.batching];
-      folder.totalSuggestions[SuggestionType.product] += totalSuggestions[SuggestionType.product];
+      folder.totalSuggestions[SuggestionType.batching] +=
+        totalSuggestions[SuggestionType.batching];
+      folder.totalSuggestions[SuggestionType.product] +=
+        totalSuggestions[SuggestionType.product];
     }
 
     return folder.totalSuggestions;
   }
 
   private async fetchSuggestionsForFile(file: File): Promise<Suggestion[]> {
-    ++this.count;
+    // read file as string
+    const fileContent = (await readFile(file.filePath)).toString();
+    console.log("fileContent", fileContent);
 
-    const suggestions: Suggestion[] = new Array(this.count).fill(0).map(
-      (_, i) =>
+    const { data } = await axios.post(`http://localhost:4000/api`, {
+      fileContent,
+    });
+    console.log(data);
+
+    const suggestions: Suggestion[] = [];
+
+    // regex find in file
+    const regex =
+      /Replace:\n```javascript\n([\s\S]*?)```\nWith:\n```javascript\n([\s\S]*?)```\nExplanation: ([\s\S]*?)(?=Replace:|$)/g;
+
+    let result = data.matchAll(regex);
+    for (const match of result) {
+      console.log(match);
+      const lineByLine = fileContent.split("\n");
+      const lineNo = lineByLine.findIndex((line) =>
+        line.includes(match[1].trim())
+      );
+      suggestions.push(
         new Suggestion(
           file,
-          (i + 1) * 5,
-          "Converting from Ethers to Biconomy SDK involves replacing the Ethers transaction calls with the Biconomy SDK's sendTx method, which facilitates gasless transactions and enhances user experience on Ethereum-based DApps",
-          `// Initialize the Smart Account
-           // All values are optional except networkConfig only in the case of gasless dappAPIKey is required
-            let options = {
-              activeNetworkId: ChainId.GOERLI,
-              supportedNetworksIds: [ChainId.GOERLI, ChainId.POLYGON_MAINNET, ChainId.POLYGON_MUMBAI],
-              networkConfig: [
-                {
-                  chainId: ChainId.POLYGON_MUMBAI,
-                  // Dapp API Key you will get from new Biconomy dashboard that will be live soon
-                  // Meanwhile you can use the test dapp api key mentioned above
-                  dappAPIKey: <DAPP_API_KEY>,
-                  providerUrl: <YOUR_PROVIDER_URL>
-                },
-                {
-                  chainId: ChainId.POLYGON_MAINNET,
-                  // Dapp API Key you will get from new Biconomy dashboard that will be live soon
-                  // Meanwhile you can use the test dapp api key mentioned above
-                  dappAPIKey: <DAPP_API_KEY>,
-                  providerUrl: <YOUR_PROVIDER_URL>
-                }
-              ]
-            } 
-            
-            // this provider is from the social login which we created in previous setup
-            let smartAccount = new SmartAccount(provider, options);
-            smartAccount = await smartAccount.init();
-          `,
+          lineNo,
+          match[3],
+          match[2],
           SuggestionType.migration
         )
-    );
+      );
+    }
 
-    suggestions.push(
-      new Suggestion(
-        file,
-        25,
-        'Approve and Swap can be batched together to save gas',
-        'NA',
-        SuggestionType.batching
-      )
-    );
+    // // check if the file contains the word "ethers" suggest to migrate
+    // if (fileContent.includes(`require("ethers")`) || `import "ethers"`) {
+    //   // line number in file where the word "ethers" is present
+    //   const lineNo = fileContent.split(`require("ethers")`).length;
+    //   suggestions.push(
+    //     new Suggestion(
+    //       file,
+    //       lineNo,
+    //       "Migrate to Biconomy SDK",
+    //       "",
+    //       SuggestionType.migration
+    //     )
+    //   );
+    // }
 
-    suggestions.push(
-      new Suggestion(file, 30, 'Social login makes sense here', 'NA', SuggestionType.product)
-    );
+    // suggestions.push(
+    //   new Suggestion(
+    //     file,
+    //     25,
+    //     "Approve and Swap can be batched together to save gas",
+    //     "NA",
+    //     SuggestionType.batching
+    //   )
+    // );
 
-    return await new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(suggestions);
-      }, 500);
-    });
+    // suggestions.push(
+    //   new Suggestion(
+    //     file,
+    //     30,
+    //     "Social login makes sense here",
+    //     "NA",
+    //     SuggestionType.product
+    //   )
+    // );
+
+    return suggestions;
   }
 }
