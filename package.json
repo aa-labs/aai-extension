@@ -52,7 +52,7 @@
         },
         {
           "id": "baai-product-view",
-          "name": "Product Suggestions"
+          "name": "Relevant Forum Posts"
         }
       ]
     },
@@ -67,7 +67,7 @@
       },
       {
         "view": "baai-product-view",
-        "contents": "Scan your project for product suggestions.\n[Scan Project](command:baai.refresh)"
+        "contents": "Scan your project for forum suggestions.\n[Scan Project](command:baai.refresh)"
       }
     ]
   },

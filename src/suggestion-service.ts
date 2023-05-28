@@ -78,8 +78,8 @@ export class SuggestionsService {
         totalSuggestions[SuggestionType.migration];
       folder.totalSuggestions[SuggestionType.batching] +=
         totalSuggestions[SuggestionType.batching];
-      folder.totalSuggestions[SuggestionType.product] +=
-        totalSuggestions[SuggestionType.product];
+      folder.totalSuggestions[SuggestionType.forum] +=
+        totalSuggestions[SuggestionType.forum];
     }
 
     return folder.totalSuggestions;
@@ -93,17 +93,16 @@ export class SuggestionsService {
     const { data } = await axios.post(`http://localhost:4000/api`, {
       fileContent,
     });
-    console.log(data);
 
+    const { suggestionsData, bacthingData, forumPostsData } = data;
     const suggestions: Suggestion[] = [];
 
     // regex find in file
     const regex =
       /Replace:\n```javascript\n([\s\S]*?)```\nWith:\n```javascript\n([\s\S]*?)```\nExplanation: ([\s\S]*?)(?=Replace:|$)/g;
 
-    let result = data.matchAll(regex);
+    let result = suggestionsData.matchAll(regex);
     for (const match of result) {
-      console.log(match);
       const lineByLine = fileContent.split("\n");
       const lineNo = lineByLine.findIndex((line) =>
         line.includes(match[1].trim())
@@ -119,40 +118,35 @@ export class SuggestionsService {
       );
     }
 
-    // // check if the file contains the word "ethers" suggest to migrate
-    // if (fileContent.includes(`require("ethers")`) || `import "ethers"`) {
-    //   // line number in file where the word "ethers" is present
-    //   const lineNo = fileContent.split(`require("ethers")`).length;
-    //   suggestions.push(
-    //     new Suggestion(
-    //       file,
-    //       lineNo,
-    //       "Migrate to Biconomy SDK",
-    //       "",
-    //       SuggestionType.migration
-    //     )
-    //   );
-    // }
+    let bacthingResult = bacthingData.matchAll(regex);
+    for (const match of bacthingResult) {
+      const lineByLine = fileContent.split("\n");
+      suggestions.push(
+        new Suggestion(
+          file,
+          lineByLine.length - 5,
+          match[3],
+          match[2],
+          SuggestionType.batching
+        )
+      );
+    }
 
-    // suggestions.push(
-    //   new Suggestion(
-    //     file,
-    //     25,
-    //     "Approve and Swap can be batched together to save gas",
-    //     "NA",
-    //     SuggestionType.batching
-    //   )
-    // );
-
-    // suggestions.push(
-    //   new Suggestion(
-    //     file,
-    //     30,
-    //     "Social login makes sense here",
-    //     "NA",
-    //     SuggestionType.product
-    //   )
-    // );
+    const forumRegex =
+      /\d+\.\s\[(.+?)\]\((https:\/\/forum\.biconomy\.io\/.+?)\)/g;
+    let forumPostsResult = forumPostsData.matchAll(forumRegex);
+    for (const match of forumPostsResult) {
+      const lineByLine = fileContent.split("\n");
+      const suggestion = new Suggestion(
+        file,
+        lineByLine.length - 7,
+        match[1],
+        match[2],
+        SuggestionType.forum
+      );
+      suggestion.documentationLink = match[2];
+      suggestions.push(suggestion);
+    }
 
     return suggestions;
   }

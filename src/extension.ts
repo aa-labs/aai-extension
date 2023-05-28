@@ -1,7 +1,7 @@
-import * as vscode from 'vscode';
-import { SuggestionsService } from './suggestion-service';
-import { SuggestionsTreeProvider } from './suggestions-tree-provider';
-import { Folder, Suggestion, SuggestionType } from './types';
+import * as vscode from "vscode";
+import { SuggestionsService } from "./suggestion-service";
+import { SuggestionsTreeProvider } from "./suggestions-tree-provider";
+import { Folder, Suggestion, SuggestionType } from "./types";
 import {
   BAAI_APPLY_SUGGESTION_COMMAND_ID,
   BAAI_BATCHING_SUGGESTIONS_VIEW_ID,
@@ -9,27 +9,28 @@ import {
   BAAI_OPEN_FILE_COMMAND_ID,
   BAAI_PRODUCT_SUGGESTIONS_VIEW_ID,
   BAAI_REFRESH_COMMAND_ID,
-} from './identifier';
-import { CodeLensProvider } from './code-lens-provider';
-import { HoverProvider } from './hover-provider';
+} from "./identifier";
+import { CodeLensProvider } from "./code-lens-provider";
+import { HoverProvider } from "./hover-provider";
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "baai" is now active!');
 
   const languageSelector = [
-    { language: 'javascript' },
-    { language: 'typescript' },
-    { language: 'typescriptreact' },
-    { language: 'javascriptreact' },
+    { language: "javascript" },
+    { language: "typescript" },
+    { language: "typescriptreact" },
+    { language: "javascriptreact" },
   ];
 
   const rootPath =
-    vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0
+    vscode.workspace.workspaceFolders &&
+    vscode.workspace.workspaceFolders.length > 0
       ? vscode.workspace.workspaceFolders[0].uri.fsPath
       : undefined;
 
   if (!rootPath) {
-    throw new Error('No workspace root path');
+    throw new Error("No workspace root path");
   }
 
   const rootFolder = new Folder(rootPath, null);
@@ -47,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
   const productTreeProvider = new SuggestionsTreeProvider(
     rootPath,
     suggestionService,
-    SuggestionType.product
+    SuggestionType.forum
   );
 
   const generateSuggestions = () => {
@@ -67,10 +68,18 @@ export function activate(context: vscode.ExtensionContext) {
     BAAI_INTEGRATION_SUGGESTIONS_VIEW_ID,
     migrationTreeProvider
   );
-  vscode.window.registerTreeDataProvider(BAAI_BATCHING_SUGGESTIONS_VIEW_ID, batchingTreeProvider);
-  vscode.window.registerTreeDataProvider(BAAI_PRODUCT_SUGGESTIONS_VIEW_ID, productTreeProvider);
+  vscode.window.registerTreeDataProvider(
+    BAAI_BATCHING_SUGGESTIONS_VIEW_ID,
+    batchingTreeProvider
+  );
+  vscode.window.registerTreeDataProvider(
+    BAAI_PRODUCT_SUGGESTIONS_VIEW_ID,
+    productTreeProvider
+  );
   context.subscriptions.push(
-    vscode.commands.registerCommand(BAAI_REFRESH_COMMAND_ID, () => generateSuggestions())
+    vscode.commands.registerCommand(BAAI_REFRESH_COMMAND_ID, () =>
+      generateSuggestions()
+    )
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
@@ -93,18 +102,21 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
   context.subscriptions.push(
-    vscode.commands.registerCommand(BAAI_APPLY_SUGGESTION_COMMAND_ID, (suggestion: Suggestion) => {
-      vscode.window
-        .showInformationMessage(suggestion.suggestion, 'Visit the documentation')
-        .then((option) => {
-          vscode.env.openExternal(vscode.Uri.parse(suggestion.documentationLink));
-        });
-    })
+    vscode.commands.registerCommand(
+      BAAI_APPLY_SUGGESTION_COMMAND_ID,
+      (link: string) => {
+        // vscode.window
+        // .showInformationMessage(link, 'Visit the documentation')
+        // .then((option) => {
+        vscode.env.openExternal(vscode.Uri.parse(link));
+        // });
+      }
+    )
   );
   context.subscriptions.push(
     vscode.languages.registerHoverProvider(
       {
-        scheme: 'file',
+        scheme: "file",
       },
       new HoverProvider(suggestionService)
     )
