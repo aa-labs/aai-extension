@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import { SuggestionsService } from './integration-suggestions/suggestion-service';
 import { IntegrationSuggestionsTreeProvider } from './integration-suggestions/integration-suggestions-tree-provider';
-import { Folder } from './integration-suggestions/types';
+import { Folder, MigrationSuggestion } from './integration-suggestions/types';
 import {
+  BAAI_APPLY_SUGGESTION_COMMAND_ID,
   BAAI_INTEGRATION_SUGGESTIONS_VIEW_ID,
   BAAI_OPEN_FILE_COMMAND_ID,
   BAAI_REFRESH_COMMAND_ID,
@@ -67,6 +68,18 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerCodeLensProvider(
       languageSelector,
       new IntegrationSuggestionsCodeLensProvider(suggestionService)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      BAAI_APPLY_SUGGESTION_COMMAND_ID,
+      (suggestion: MigrationSuggestion) => {
+        vscode.window
+          .showInformationMessage(suggestion.suggestion, 'Visit the documentation')
+          .then((option) => {
+            vscode.env.openExternal(vscode.Uri.parse(suggestion.documentationLink));
+          });
+      }
     )
   );
 }

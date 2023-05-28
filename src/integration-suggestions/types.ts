@@ -3,6 +3,8 @@ import * as path from 'path';
 import { BAAI_OPEN_FILE_COMMAND_ID } from '../identifier';
 
 export class MigrationSuggestion {
+  public documentationLink: string = 'https://docs.biconomy.io/introduction/overview';
+
   constructor(
     public readonly file: File,
     public readonly lineNumber: number,
