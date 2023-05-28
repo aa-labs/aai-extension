@@ -22,6 +22,8 @@ export class SuggestionsService {
   public filePathToFileMap: Map<string, File> = new Map();
   public folderPathToFolderMap: Map<string, Folder> = new Map();
 
+  public count = 0;
+
   constructor(private readonly workspaceRoot: string) {
     try {
       const rules = fs
@@ -57,7 +59,7 @@ export class SuggestionsService {
     // Generate suggestions for the files
     for (const file of folder.files) {
       this.filePathToFileMap.set(file.filePath, file);
-      file.suggestions = await this.getSuggestionsForFile(file);
+      file.suggestions = await this.fetchSuggestionsForFile(file);
       folder.totalSuggestions += file.suggestions.length;
     }
 
@@ -69,15 +71,23 @@ export class SuggestionsService {
     return folder.totalSuggestions;
   }
 
-  async getSuggestionsForFile(file: File): Promise<MigrationSuggestion[]> {
-    console.log(`Generating suggestions for ${file.filePath}`);
+  private async fetchSuggestionsForFile(file: File): Promise<MigrationSuggestion[]> {
+    ++this.count;
+
+    const suggestions: MigrationSuggestion[] = new Array(this.count)
+      .fill(0)
+      .map(
+        (_, i) =>
+          new MigrationSuggestion(
+            file,
+            (i + 1) * 5,
+            "Converting from Ethers to Biconomy SDK involves replacing the Ethers transaction calls with the Biconomy SDK's sendTx method, which facilitates gasless transactions and enhances user experience on Ethereum-based DApps"
+          )
+      );
 
     return await new Promise((resolve) => {
       setTimeout(() => {
-        resolve([
-          new MigrationSuggestion(file, 10, 'hello'),
-          new MigrationSuggestion(file, 20, 'world'),
-        ]);
+        resolve(suggestions);
       }, 500);
     });
   }

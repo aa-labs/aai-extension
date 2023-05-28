@@ -63,7 +63,7 @@ export class MigrationSuggestionItem extends vscode.TreeItem {
     this.command = {
       command: BAAI_OPEN_FILE_COMMAND_ID,
       title: '',
-      arguments: [suggestion.file.filePath, suggestion.lineNumber - 1],
+      arguments: [suggestion.file.filePath, suggestion.lineNumber],
     };
   }
 
