@@ -4,7 +4,7 @@ import type { Stats } from 'fs';
 import * as path from 'path';
 import * as fs from 'fs';
 
-import { File, Folder, MigrationSuggestion } from './types';
+import { File, Folder, MigrationSuggestion } from './integration-suggestions/types';
 
 export class SuggestionsService {
   private readonly staticFilters = [

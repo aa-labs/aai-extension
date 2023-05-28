@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { FileItem, FolderItem, MigrationSuggestionItem } from './types';
 import type { Item } from './types';
-import { SuggestionsService } from './suggestion-service';
+import { SuggestionsService } from '../suggestion-service';
 
 export class IntegrationSuggestionsTreeProvider implements vscode.TreeDataProvider<Item> {
   private _onDidChangeTreeData: vscode.EventEmitter<Item | undefined | null | void> =

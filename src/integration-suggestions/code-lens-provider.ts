@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { SuggestionsService } from './suggestion-service';
+import type { SuggestionsService } from '../suggestion-service';
 import { BAAI_APPLY_SUGGESTION_COMMAND_ID } from '../identifier';
 
 export class IntegrationSuggestionsCodeLensProvider implements vscode.CodeLensProvider {

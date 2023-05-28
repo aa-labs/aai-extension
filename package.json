@@ -45,6 +45,14 @@
         {
           "id": "baai-integration-view",
           "name": "Integration Suggestions"
+        },
+        {
+          "id": "baai-bundles-view",
+          "name": "Bundle Suggestions"
+        },
+        {
+          "id": "baai-product-view",
+          "name": "Product Suggestions"
         }
       ]
     },
@@ -52,6 +60,14 @@
       {
         "view": "baai-integration-view",
         "contents": "Scan your project for integration suggestions.\n[Scan Project](command:baai.refresh)"
+      },
+      {
+        "view": "baai-bundles-view",
+        "contents": "Scan your project for bundling suggestions.\n[Scan Project](command:baai.refresh)"
+      },
+      {
+        "view": "baai-product-view",
+        "contents": "Scan your project for product suggestions.\n[Scan Project](command:baai.refresh)"
       }
     ]
   },

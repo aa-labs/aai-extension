@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { SuggestionsService } from './integration-suggestions/suggestion-service';
+import { SuggestionsService } from './suggestion-service';
 import { IntegrationSuggestionsTreeProvider } from './integration-suggestions/integration-suggestions-tree-provider';
 import { Folder, MigrationSuggestion } from './integration-suggestions/types';
 import {
