@@ -47,8 +47,8 @@
           "name": "Integration Suggestions"
         },
         {
-          "id": "baai-bundles-view",
-          "name": "Bundle Suggestions"
+          "id": "baai-batching-view",
+          "name": "Batching Suggestions"
         },
         {
           "id": "baai-product-view",
@@ -62,8 +62,8 @@
         "contents": "Scan your project for integration suggestions.\n[Scan Project](command:baai.refresh)"
       },
       {
-        "view": "baai-bundles-view",
-        "contents": "Scan your project for bundling suggestions.\n[Scan Project](command:baai.refresh)"
+        "view": "baai-batching-view",
+        "contents": "Scan your project for batching suggestions.\n[Scan Project](command:baai.refresh)"
       },
       {
         "view": "baai-product-view",

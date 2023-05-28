@@ -1,14 +1,17 @@
 import * as vscode from 'vscode';
 import { SuggestionsService } from './suggestion-service';
-import { IntegrationSuggestionsTreeProvider } from './integration-suggestions/integration-suggestions-tree-provider';
-import { Folder, MigrationSuggestion } from './integration-suggestions/types';
+import { SuggestionsTreeProvider } from './suggestions-tree-provider';
+import { Folder, Suggestion, SuggestionType } from './types';
 import {
   BAAI_APPLY_SUGGESTION_COMMAND_ID,
+  BAAI_BATCHING_SUGGESTIONS_VIEW_ID,
   BAAI_INTEGRATION_SUGGESTIONS_VIEW_ID,
   BAAI_OPEN_FILE_COMMAND_ID,
+  BAAI_PRODUCT_SUGGESTIONS_VIEW_ID,
   BAAI_REFRESH_COMMAND_ID,
 } from './identifier';
-import { IntegrationSuggestionsCodeLensProvider } from './integration-suggestions/code-lens-provider';
+import { CodeLensProvider } from './code-lens-provider';
+import { HoverProvider } from './hover-provider';
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "baai" is now active!');
@@ -29,23 +32,43 @@ export function activate(context: vscode.ExtensionContext) {
     throw new Error('No workspace root path');
   }
 
-  // Integration Suggestions
   const rootFolder = new Folder(rootPath, null);
   const suggestionService = new SuggestionsService(rootPath);
-  const provider = new IntegrationSuggestionsTreeProvider(rootPath, suggestionService);
+  const migrationTreeProvider = new SuggestionsTreeProvider(
+    rootPath,
+    suggestionService,
+    SuggestionType.migration
+  );
+  const batchingTreeProvider = new SuggestionsTreeProvider(
+    rootPath,
+    suggestionService,
+    SuggestionType.batching
+  );
+  const productTreeProvider = new SuggestionsTreeProvider(
+    rootPath,
+    suggestionService,
+    SuggestionType.product
+  );
 
   const generateSuggestions = () => {
     suggestionService
       .buildFolderStructureAndGenerateSuggestions(rootFolder)
       .then(() => {
-        provider.refresh();
+        migrationTreeProvider.refresh();
+        batchingTreeProvider.refresh();
+        productTreeProvider.refresh();
       })
       .catch((e) => {
         console.error(`Error generating suggestions: ${e}`);
       });
   };
 
-  vscode.window.registerTreeDataProvider(BAAI_INTEGRATION_SUGGESTIONS_VIEW_ID, provider);
+  vscode.window.registerTreeDataProvider(
+    BAAI_INTEGRATION_SUGGESTIONS_VIEW_ID,
+    migrationTreeProvider
+  );
+  vscode.window.registerTreeDataProvider(BAAI_BATCHING_SUGGESTIONS_VIEW_ID, batchingTreeProvider);
+  vscode.window.registerTreeDataProvider(BAAI_PRODUCT_SUGGESTIONS_VIEW_ID, productTreeProvider);
   context.subscriptions.push(
     vscode.commands.registerCommand(BAAI_REFRESH_COMMAND_ID, () => generateSuggestions())
   );
@@ -66,19 +89,24 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.languages.registerCodeLensProvider(
       languageSelector,
-      new IntegrationSuggestionsCodeLensProvider(suggestionService)
+      new CodeLensProvider(suggestionService)
     )
   );
   context.subscriptions.push(
-    vscode.commands.registerCommand(
-      BAAI_APPLY_SUGGESTION_COMMAND_ID,
-      (suggestion: MigrationSuggestion) => {
-        vscode.window
-          .showInformationMessage(suggestion.suggestion, 'Visit the documentation')
-          .then((option) => {
-            vscode.env.openExternal(vscode.Uri.parse(suggestion.documentationLink));
-          });
-      }
+    vscode.commands.registerCommand(BAAI_APPLY_SUGGESTION_COMMAND_ID, (suggestion: Suggestion) => {
+      vscode.window
+        .showInformationMessage(suggestion.suggestion, 'Visit the documentation')
+        .then((option) => {
+          vscode.env.openExternal(vscode.Uri.parse(suggestion.documentationLink));
+        });
+    })
+  );
+  context.subscriptions.push(
+    vscode.languages.registerHoverProvider(
+      {
+        scheme: 'file',
+      },
+      new HoverProvider(suggestionService)
     )
   );
 }

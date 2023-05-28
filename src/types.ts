@@ -1,19 +1,31 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { BAAI_OPEN_FILE_COMMAND_ID } from '../identifier';
+import { BAAI_OPEN_FILE_COMMAND_ID } from './identifier';
 
-export class MigrationSuggestion {
+export enum SuggestionType {
+  migration = 'Migration',
+  batching = 'Batching',
+  product = 'Product',
+}
+
+export class Suggestion {
   public documentationLink: string = 'https://docs.biconomy.io/introduction/overview';
 
   constructor(
     public readonly file: File,
     public readonly lineNumber: number,
-    public readonly suggestion: string
+    public readonly suggestion: string,
+    public readonly codeBlock: string,
+    public readonly suggestionType: SuggestionType
   ) {}
 }
 
 export class Folder {
-  public totalSuggestions: number = 0;
+  public totalSuggestions: Record<SuggestionType, number> = {
+    [SuggestionType.migration]: 0,
+    [SuggestionType.batching]: 0,
+    [SuggestionType.product]: 0,
+  };
   public folders: Folder[] = [];
   public files: File[] = [];
 
@@ -21,17 +33,17 @@ export class Folder {
 }
 
 export class File {
-  public suggestions: MigrationSuggestion[] = [];
+  public suggestions: Suggestion[] = [];
 
   constructor(public readonly filePath: string, public readonly parent: Folder) {}
 }
 
 export class FolderItem extends vscode.TreeItem {
-  constructor(public readonly folder: Folder) {
+  constructor(public readonly folder: Folder, public readonly suggestionType: SuggestionType) {
     const label = path.basename(folder.folderPath);
 
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
-    this.description = this.folder.totalSuggestions.toString();
+    this.description = this.folder.totalSuggestions[suggestionType].toString();
   }
 
   iconPath = {
@@ -41,10 +53,12 @@ export class FolderItem extends vscode.TreeItem {
 }
 
 export class FileItem extends vscode.TreeItem {
-  constructor(public readonly file: File) {
+  constructor(public readonly file: File, public readonly suggestionType: SuggestionType) {
     const label = path.basename(file.filePath);
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
-    this.description = this.file.suggestions.length.toString();
+    this.description = this.file.suggestions
+      .filter((suggestion) => suggestion.suggestionType === suggestionType)
+      .length.toString();
     this.command = {
       command: BAAI_OPEN_FILE_COMMAND_ID,
       title: '',
@@ -58,8 +72,8 @@ export class FileItem extends vscode.TreeItem {
   };
 }
 
-export class MigrationSuggestionItem extends vscode.TreeItem {
-  constructor(public readonly suggestion: MigrationSuggestion) {
+export class SuggestionItem extends vscode.TreeItem {
+  constructor(public readonly suggestion: Suggestion) {
     super(suggestion.suggestion, vscode.TreeItemCollapsibleState.None);
     this.description = `Line ${suggestion.lineNumber}`;
     this.command = {
@@ -75,4 +89,4 @@ export class MigrationSuggestionItem extends vscode.TreeItem {
   };
 }
 
-export type Item = FolderItem | FileItem | MigrationSuggestionItem;
+export type IntegrationTreeViewItem = FolderItem | FileItem | SuggestionItem;
